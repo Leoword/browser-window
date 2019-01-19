@@ -1,12 +1,13 @@
-const {addEventListener, removeEventListener} = require('../utils/polyfill');
 const postMessage = require('../utils/postMessage');
-const tagList = require('../constants').TAGLIST.join(',');
+const {frameListLength} = require('../constants');
+const {updateChildren} = require('../utils/frameOperate');
 
 const _ = require('underscore');
 
 module.exports = function FrameWindow() {
     this.symbol = generateSymbol();
     this.children = null;
+    this.watcher = null;
     
     this.signIn = function () {
         postMessage(parent, {
@@ -17,6 +18,12 @@ module.exports = function FrameWindow() {
                 children: this.children
             }
         });
+
+        if (this.watcher) {
+            clearInterval(this.watcher);
+        }
+
+        this.watcher = updateChildren(this.children, this.removeChild, this);
     }
 
     this.setChildren = function ({symbol, children}) {
@@ -28,7 +35,16 @@ module.exports = function FrameWindow() {
             parent: this.symbol, children
         }
 
-        if (document.querySelectorAll(tagList).length === _.keys(this.children).length) {
+        if (frameListLength() === _.keys(this.children).length) {
+            this.signIn();
+        }
+    }
+
+    this.removeChild = function ({symbol}) {
+        if (this.children && this.children[symbol]) {
+            console.log(this.children, symbol);
+            delete this.children[symbol];
+
             this.signIn();
         }
     }

@@ -11,3 +11,5 @@
 // 访问出错的话，404，重新注册一下agent和browser
 // 监听出的错误，然后传给服务器错误日志
 //browserWindow 一直轮询observer保证在线
+
+// get   维持链接，获取program信息   

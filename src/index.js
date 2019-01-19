@@ -1,17 +1,21 @@
 const BrowserWindow = require('./element/browserWindow');
 const FrameWindow = require('./element/frameWindow');
-const {addEventListener} = require('./utils/polyfill');
+
+const {addEventListener, removeEventListener} = require('./utils/polyfill');
 const postMessage = require('./utils/postMessage');
+
+const {frameListLength} = require('./constants');
+
 const _ = require('underscore');
 
-const tagList = require('./constants').TAGLIST.join(',');
+require('../test/click')(); //测试代码，可删
 
 if (top === self) {
     const browserWindow = new BrowserWindow();
 
     const mapping = require('./register/browserWindow')(browserWindow);
 
-    // browserWindow.init();
+    // browserWindow.init(); 初始化
 
     addEventListener(top, 'message', function (event) {
         const { namespace, type, argv } = window.JSON.parse(event.data);
@@ -26,15 +30,17 @@ if (top === self) {
             case 'frameWindow':
                 mapping.frameWindow[type].call(browserWindow, argv, event);
 
-                break;
-            }
-        });
+                console.log(browserWindow.frameTree);
 
+                break;
+        }
+    });
 
 } else {
     const frameWindow = new FrameWindow();
 
-    const mapping = require('./register/frameWindow')(frameWindow)
+
+    const mapping = require('./register/frameWindow')(frameWindow);
 
     postMessage(parent, {
         namespace: 'frameWindow',
@@ -44,11 +50,27 @@ if (top === self) {
         }
     });
 
-    window.onload = function () {
-        if (document.querySelectorAll(tagList).length === 0) {
+    addEventListener(window, 'load', function startSignIn() {
+        if (frameListLength() === 0) {
             frameWindow.signIn();
         }
+
+        removeEventListener(window, 'load', startSignIn);
+    });
+
+    window.onunload = function () {
+        postMessage(parent, {
+            namespace: 'frameWindow',
+            type: 'removeChild',
+            argv: {
+                symbol: frameWindow.symbol
+            }
+        })
     }
+
+    // setInterval(function () {
+    //     frameWindow.removeChild({symbol: null})
+    // }, 6000);
 
     addEventListener(window, 'message', function (event) {
         const {namespace, type, argv} = window.JSON.parse(event.data);

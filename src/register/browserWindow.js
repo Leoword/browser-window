@@ -1,10 +1,11 @@
-const setWindowId = require('../utils/setWindowId');
+const {setWindowId} = require('../utils/frameOperate');
 
-module.exports = function ({setFrameTree}) {
+module.exports = function ({setFrameTree, removeChild}) {
     return {
         frameWindow: {
             setChildren: setFrameTree,
-            setWindowId
+            setWindowId,
+            removeChild
         }
     }
 }
